@@ -40,7 +40,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('calendar');
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const devMode = false; // Set to true to unlock all doors for testing
@@ -90,28 +90,14 @@ const App: React.FC = () => {
     }
   }, [initializeApp]);
   
-  // Effect to control background music
+  // Attempt to play background music on mount
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
-      audio.muted = isMuted;
-      if (view === 'calendar' && !isModalOpen && isInitialized) {
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                if (error.name === 'NotAllowedError') {
-                    console.log("Audio autoplay prevented. Muting by default.");
-                    if (!isMuted) setIsMuted(true); // Mute if not already muted by user
-                } else {
-                    console.error("Audio playback error:", error);
-                }
-            });
-        }
-      } else {
-        audio.pause();
-      }
+      audio.volume = 0.3; // Lower volume for background music
+      audio.play().catch(e => console.warn("Background music couldn't play automatically:", e));
     }
-  }, [view, isModalOpen, isInitialized, isMuted]);
+  }, []);
 
   const handleOnboardingComplete = async (preferences: UserPreferences) => {
     localStorage.setItem('userPreferences', JSON.stringify(preferences));
@@ -193,6 +179,20 @@ const App: React.FC = () => {
     setIsModalOpen(false);
     setCurrentRecipe(null);
   };
+  
+  const toggleMute = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const newMutedState = !isMuted;
+    audio.muted = newMutedState;
+    setIsMuted(newMutedState);
+
+    // If audio is paused (e.g., by browser policy), try playing it again on first unmute.
+    if (audio.paused) {
+      audio.play().catch(e => console.warn("Could not play audio on user interaction:", e));
+    }
+  };
 
   const allRecipes = useMemo(() => Array.from(recipesCache.values()), [recipesCache]);
   
@@ -202,31 +202,29 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-stone-100 min-h-screen">
-       <audio
-        ref={audioRef}
-        src="https://upload.wikimedia.org/wikipedia/commons/2/24/Dance_of_the_Sugar_Plum_Fairy_by_Tchaikovsky.mp3"
-        loop
-        preload="auto"
+      <audio 
+        ref={audioRef} 
+        src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Jingle_Bells_instrumental_lower.mp3" 
+        loop 
+        preload="auto" 
+        muted
       />
       <main className="container mx-auto px-4 py-8 relative">
-        {isInitialized && view === 'calendar' && (
-           <button
-             onClick={() => setIsMuted(!isMuted)}
-             className="absolute top-4 right-4 z-10 p-2 bg-white/50 rounded-full text-gray-700 hover:bg-white/80 backdrop-blur-sm transition"
-             aria-label={isMuted ? "Unmute music" : "Mute music"}
-           >
-             {isMuted ? (
-               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 9l4 4m0-4l-4 4" />
-               </svg>
-             ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        <button
+            onClick={toggleMute}
+            className="fixed top-4 right-4 z-50 p-2 bg-white/50 rounded-full text-gray-700 hover:bg-white/80 transition-colors shadow-md backdrop-blur-sm"
+            aria-label={isMuted ? "Unmute music" : "Mute music"}
+        >
+            {isMuted ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
                 </svg>
-             )}
-           </button>
-        )}
+            ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                </svg>
+            )}
+        </button>
         <Header />
 
         <nav className="flex justify-center mb-8 gap-4" style={{ fontFamily: "'Gaegu', cursive" }}>

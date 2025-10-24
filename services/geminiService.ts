@@ -89,7 +89,8 @@ export const generateAllDessertRecipes = async (preferences: UserPreferences): P
     }
 
     if (allRecipes.length < 24) {
-      throw new Error(`Failed to generate 24 unique recipes. Only got ${allRecipes.length}. Please try again.`);
+      console.warn(`API generated only ${allRecipes.length} recipes. Falling back to the curated list to ensure a full calendar.`);
+      return fallbackRecipes.map(mapFallbackToRecipe).slice(0, 24);
     }
 
     return allRecipes.slice(0, 24);
