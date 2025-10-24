@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import CalendarDoor from './components/CalendarDoor';
 import RecipeModal from './components/RecipeModal';
@@ -40,6 +40,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('calendar');
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const devMode = false; // Set to true to unlock all doors for testing
   const [nextUnlockedDay, setNextUnlockedDay] = useState(devMode ? 25 : 1);
@@ -87,6 +88,18 @@ const App: React.FC = () => {
       setShowOnboarding(true);
     }
   }, [initializeApp]);
+  
+  // Effect to control background music
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      if (view === 'calendar' && !isModalOpen && isInitialized) {
+        audio.play().catch(e => console.log("Audio autoplay was prevented."));
+      } else {
+        audio.pause();
+      }
+    }
+  }, [view, isModalOpen, isInitialized]);
 
   const handleOnboardingComplete = async (preferences: UserPreferences) => {
     localStorage.setItem('userPreferences', JSON.stringify(preferences));
@@ -177,6 +190,12 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-stone-100 min-h-screen">
+       <audio
+        ref={audioRef}
+        src="https://upload.wikimedia.org/wikipedia/commons/2/24/Dance_of_the_Sugar_Plum_Fairy_by_Tchaikovsky.mp3"
+        loop
+        preload="auto"
+      />
       <main className="container mx-auto px-4 py-8">
         <Header />
 
