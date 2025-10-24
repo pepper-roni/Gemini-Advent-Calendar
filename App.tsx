@@ -40,6 +40,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('calendar');
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const devMode = false; // Set to true to unlock all doors for testing
@@ -93,13 +94,24 @@ const App: React.FC = () => {
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
+      audio.muted = isMuted;
       if (view === 'calendar' && !isModalOpen && isInitialized) {
-        audio.play().catch(e => console.log("Audio autoplay was prevented."));
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                if (error.name === 'NotAllowedError') {
+                    console.log("Audio autoplay prevented. Muting by default.");
+                    if (!isMuted) setIsMuted(true); // Mute if not already muted by user
+                } else {
+                    console.error("Audio playback error:", error);
+                }
+            });
+        }
       } else {
         audio.pause();
       }
     }
-  }, [view, isModalOpen, isInitialized]);
+  }, [view, isModalOpen, isInitialized, isMuted]);
 
   const handleOnboardingComplete = async (preferences: UserPreferences) => {
     localStorage.setItem('userPreferences', JSON.stringify(preferences));
@@ -196,7 +208,25 @@ const App: React.FC = () => {
         loop
         preload="auto"
       />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative">
+        {isInitialized && view === 'calendar' && (
+           <button
+             onClick={() => setIsMuted(!isMuted)}
+             className="absolute top-4 right-4 z-10 p-2 bg-white/50 rounded-full text-gray-700 hover:bg-white/80 backdrop-blur-sm transition"
+             aria-label={isMuted ? "Unmute music" : "Mute music"}
+           >
+             {isMuted ? (
+               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 9l4 4m0-4l-4 4" />
+               </svg>
+             ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+             )}
+           </button>
+        )}
         <Header />
 
         <nav className="flex justify-center mb-8 gap-4" style={{ fontFamily: "'Gaegu', cursive" }}>

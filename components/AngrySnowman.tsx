@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 interface AngrySnowmanProps {
   show: boolean;
@@ -17,12 +17,15 @@ const messages = [
 const AngrySnowman: React.FC<AngrySnowmanProps> = ({ show, onHide }) => {
   const [currentMessage, setCurrentMessage] = useState(messages[0]);
   const [isExiting, setIsExiting] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (show) {
       setIsExiting(false);
       setCurrentMessage(messages[Math.floor(Math.random() * messages.length)]);
       
+      audioRef.current?.play().catch(e => console.error("Error playing snowman audio:", e));
+
       const timer = setTimeout(() => {
         handleHide();
       }, 3000); // Auto-hide after 3 seconds
@@ -44,6 +47,11 @@ const AngrySnowman: React.FC<AngrySnowmanProps> = ({ show, onHide }) => {
 
   return (
     <>
+      <audio
+        ref={audioRef}
+        src="https://upload.wikimedia.org/wikipedia/commons/4/45/Joulupukki_-_Santa_Claus_-_Ho_ho_ho.ogg"
+        preload="auto"
+      />
       <div 
         className={`fixed bottom-4 right-4 z-50 flex flex-col items-center ${animationClass}`}
       >

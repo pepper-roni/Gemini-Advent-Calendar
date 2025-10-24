@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserPreferences } from '../types';
 import SnowmanSpinner from './SnowmanSpinner';
@@ -8,6 +9,25 @@ interface OnboardingProps {
 
 const ALLERGY_OPTIONS = ['Peanuts', 'Tree Nuts', 'Dairy', 'Gluten', 'Soy', 'Eggs'];
 const DIETARY_OPTIONS = ['Vegan', 'Vegetarian', 'Low Sugar'];
+
+// Fix: Moved Checkbox component outside of Onboarding, and defined its props with an interface to resolve the TypeScript error with the 'key' prop.
+interface CheckboxProps {
+  label: string;
+  isChecked: boolean;
+  onToggle: () => void;
+}
+
+const Checkbox: React.FC<CheckboxProps> = ({ label, isChecked, onToggle }) => (
+  <label 
+    onClick={onToggle}
+    className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-teal-50 transition-colors">
+    <div className={`w-6 h-6 rounded border-2 ${isChecked ? 'bg-teal-500 border-teal-500' : 'border-gray-300'} flex items-center justify-center`}>
+      {isChecked && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+    </div>
+    <span className="text-xl text-gray-700">{label}</span>
+  </label>
+);
+
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [selectedAllergies, setSelectedAllergies] = useState<Set<string>>(new Set());
@@ -53,17 +73,6 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     });
     // The parent component will unmount this component upon completion
   };
-
-  const Checkbox = ({ label, isChecked, onToggle }: { label: string, isChecked: boolean, onToggle: () => void }) => (
-    <label 
-      onClick={onToggle}
-      className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-teal-50 transition-colors">
-      <div className={`w-6 h-6 rounded border-2 ${isChecked ? 'bg-teal-500 border-teal-500' : 'border-gray-300'} flex items-center justify-center`}>
-        {isChecked && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-      </div>
-      <span className="text-xl text-gray-700">{label}</span>
-    </label>
-  );
 
   return (
     <div className="min-h-screen bg-stone-100 flex items-center justify-center p-4" style={{ fontFamily: "'Gaegu', cursive" }}>
