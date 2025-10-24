@@ -1,0 +1,5 @@
+{
+  "name": "Advent Calendar Dessert Recipes",
+  "description": "An interactive advent calendar that generates a new, unique dessert recipe for each of the 24 days leading up to Christmas using the Gemini API. Click on a day to reveal a festive treat with its title, ingredients, and instructions.",
+  "requestFramePermissions": []
+}
